@@ -3,7 +3,10 @@
   "version": "3.0.0",
   "private": true,
   "description": "MCQ Arcade: nested quiz sections, admin-managed content and permissions, markdown import, and a Groq-powered study assistant",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "netlify dev"
+  },
   "dependencies": { "express": "^4.19.2" },
   "engines": { "node": ">=18" }
 }
