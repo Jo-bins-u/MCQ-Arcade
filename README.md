@@ -1,100 +1,149 @@
-# MCQ Arcade v3.2
+# MCQ Arcade 🕹️
 
-Nested quiz sections, accounts that sync across browsers (Supabase), a **study assistant docked on every page** (Groq), and an **admin console** where you decide who can see which topics and what each person is allowed to do.
+> **A self-hosted quiz platform** — nested sections, per-user permissions, a Groq-powered AI study assistant, and a full admin console. Everything syncs across every browser you sign in on.
+
+![Netlify](https://img.shields.io/badge/Deploy-Netlify-00C7B7?logo=netlify&logoColor=white)
+![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)
+![Groq](https://img.shields.io/badge/AI-Groq-F55036?logo=groq&logoColor=white)
+![Node](https://img.shields.io/badge/Node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
+---
+
+## ✨ Features
+
+- **Three question types** — Multiple-choice (MCQ), multi-select (MSQ), and short-answer
+- **Nested sections** — Organise questions into topics and sub-topics to any depth
+- **Markdown import** — Paste or drag-and-drop `.md` files; the importer creates topics automatically
+- **AI study assistant** — Groq-powered chat docked on every page; knows what you're looking at and gives hints without spoiling unanswered questions
+- **Admin console** — Manage users, permissions, section visibility, and content from a built-in UI
+- **Granular permissions** — Seven per-user toggles (AI assistant, shuffle, read answers, mistake log, notes, reset progress, own content)
+- **Progress & XP** — Tracks every attempt per question; XP is calculated server-side
+- **Mistake log** — Review every question you've gotten wrong, grouped by topic
+- **Personal notes** — Write markdown notes under any topic; comes together in a searchable Notes page
+- **Code in questions** — Inline backticks and fenced code blocks render with syntax colouring
+- **Dark / light mode** — Follows your OS preference; override per-session
+- **PWA ready** — Installable on Android and iOS
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla JS, single `public/index.html` |
+| Auth + Database | [Supabase](https://supabase.com) (Postgres + Row Level Security) |
+| AI assistant | [Groq](https://console.groq.com) (`llama-3.3-70b-versatile` by default) |
+| API functions | Netlify Functions (Node ≥ 18) |
+| Hosting | [Netlify](https://netlify.com) |
+| Local dev server | Express (`server.js`) |
+
+---
+
+## 📁 Project Structure
 
 ```
-public/index.html     the whole front end
-api/chat.js           assistant endpoint (holds your Groq key, checks the user's permission)
-api/config.js         passes the public Supabase URL + key to the browser
-supabase/schema.sql   tables, security rules and admin functions (fresh install OR upgrade from v2)
+├── public/
+│   ├── index.html        # Entire frontend (one file)
+│   ├── manifest.json     # PWA manifest
+│   └── logo-*.png        # App icons (32 / 192 / 512 px)
+├── netlify/
+│   └── functions/
+│       ├── chat.js       # AI assistant endpoint (guards Groq key + checks permissions)
+│       └── config.js     # Passes public Supabase URL + anon key to the browser
+├── api/                  # Same handlers, Express-style (used by server.js for local dev)
+│   ├── chat.js
+│   └── config.js
+├── supabase/
+│   └── schema.sql        # Tables, RLS policies, functions — safe to re-run
+├── netlify.toml          # Build + redirect config
+├── server.js             # Local Express dev server (no Netlify CLI needed)
+└── .env.example          # Copy to .env.local for local development
 ```
 
-## 1. Supabase (database + login)
+---
 
-1. Create a project at supabase.com.
-2. **SQL Editor → New query**, paste `supabase/schema.sql`, **Run**. It is safe to run again later, and if you already have v2 data it is upgraded in place (see *Upgrading* below).
-3. **Project Settings → API**: copy the **Project URL** and the **anon / publishable key**.
-4. **Authentication → Providers → Email** is on by default. For personal use you can turn off **Confirm email** so sign-up logs you in at once. If you keep it on, set **Authentication → URL Configuration → Site URL** to your Vercel address.
+## 🚀 Deploy to Netlify (5 minutes)
 
-## 2. Groq (assistant)
+### 1 — Set up Supabase
 
-Create a key at console.groq.com/keys. Default model: `llama-3.3-70b-versatile` (override with `GROQ_MODEL`).
+1. Create a project at [supabase.com](https://supabase.com).
+2. **SQL Editor → New query** → paste the contents of `supabase/schema.sql` → **Run**.  
+   *(Safe to re-run at any time. Upgrades from v2 in place.)*
+3. **Project Settings → API**: copy your **Project URL** and **anon / publishable key**.
+4. **Authentication → Providers → Email** is on by default. For a private install, disable **Confirm email** so sign-up is instant. If you keep it on, set **Auth → URL Configuration → Site URL** to your Netlify domain.
 
-## 3. Deploy on Vercel
+> **Sign up first.** The very first account becomes the admin. Everyone who signs up afterwards is a regular user.
 
-Push to GitHub, import in Vercel (framework **Other**, no build command), and add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GROQ_API_KEY` (and optionally `GROQ_MODEL`). Local run: copy `.env.example` to `.env.local`, then `npm install && npm start`.
+### 2 — Get a Groq key
 
-> **Sign up yourself first.** The first account created becomes the admin. Everyone after that is a normal user. (To hand the role to someone else later, use the Users tab in the Admin console.)
+Create a free API key at [console.groq.com/keys](https://console.groq.com/keys).
 
-## Admin console
+### 3 — Deploy
 
-Admins see an **Admin console** button on the home page.
+1. Push this repo to GitHub.
+2. Go to [app.netlify.com](https://app.netlify.com) → **Add new site → Import from GitHub**.
+3. Netlify auto-detects `netlify.toml` — no build command needed.
+4. **Site Settings → Environment Variables** → add:
 
-**Users tab.** Every account, with seven switches each: *AI assistant, Mixed shuffle, Read answers, Mistake log, Personal notes, Reset progress, Own content* (create private sections and import their own questions). You can also make someone an admin or disable their account. Changes apply the next time that person loads or returns to the tab.
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Your Supabase anon/publishable key |
+| `GROQ_API_KEY` | Your Groq API key |
+| `GROQ_MODEL` | *(optional)* Override the default model (`llama-3.3-70b-versatile`) |
 
-**Content & access tab.** The section tree, with a badge on each:
-- **Everyone**: any signed-in user can open it.
-- **Selected users**: only the people you tick. Tick *also apply to sections inside* to cascade.
-- **Hidden**: admins only (a draft).
+5. **Trigger deploy** — you're live.
 
-Open **Questions** on a section to narrow one question (*same as section / selected users / hidden*), edit it, delete it, or add a single question by hand. A sub-section is only reachable if every section above it is too.
+---
 
-**Defaults & data tab.** The permissions new accounts start with (and a button to apply them to everyone), plus a delete-everything danger zone.
+## 💻 Local Development
 
-All of this is enforced by the database (Row Level Security), not just hidden in the UI. A user can't read content you haven't shared, and the assistant endpoint refuses people whose AI switch is off.
+**Option A — plain Node (no Netlify CLI)**
 
-## Code in questions
+```bash
+cp .env.example .env.local   # fill in your keys
+npm install
+npm start                    # http://localhost:3000
+```
 
-Questions, options and explanations can contain code. Use single backticks for inline code and a fenced block for snippets:
+**Option B — Netlify Dev (matches production exactly)**
+
+```bash
+npm install -g netlify-cli
+cp .env.example .env.local   # fill in your keys
+npm run dev                  # http://localhost:8888
+```
+
+---
+
+## 🛡️ Permissions
+
+Each user has seven permission toggles the admin can flip individually or set as a site-wide default:
+
+| Permission | What it unlocks |
+|---|---|
+| **AI assistant** | The Groq chat panel |
+| **Mixed shuffle** | Shuffle questions across a whole section |
+| **Read answers** | The "Read answers" study view |
+| **Mistake log** | See and retry incorrect questions |
+| **Personal notes** | Write markdown notes under topics |
+| **Reset progress** | Erase their own XP and history |
+| **Own content** | Create private sections and import their own questions |
+
+Permissions are enforced both in the UI and by Postgres Row Level Security — they can't be bypassed by API calls.
+
+---
+
+## 📥 Importing Questions (Markdown Format)
+
+Drag-and-drop or paste a `.md` file on the **Add questions** page. Headings that aren't questions become topics; deeper headings nest inside them.
 
 ````md
-### Q1. Trace
-What is printed?
-
-```python
-def f(n):
-    return n ** 2 // 2
-
-print(f(4))
-```
-
-- A. 8
-- B. 16
-- C. 4
-- D. 2
-
-**Answer:** A
-**Reason:** `4 ** 2` is 16 and `16 // 2` is 8.
-````
-
-Inline code shows as a monospace chip, and fenced blocks show as a dark snippet with indentation kept and light syntax colouring (the language after the opening fence is optional; Python's `//` is never treated as a comment). Options that are obviously code, like `[(0, 0), (0, 1)]`, get monospace automatically. The importer, the question editor and the Read-answers view all keep code exactly as written.
-
-Questions imported before this version lost their code indentation. Re-import them (or fix them with **Edit** in the Admin console) to get proper snippets.
-
-## Notes under every topic
-
-Every topic card (and section page) has a **Notes** button. Write as many notes as you like for that topic; light formatting works (`**bold**`, `- bullets`, `` `code` ``). Notes are private to each person and need the *Personal notes* permission.
-
-They all come together in two places:
-- the **My notes** page (top bar), grouped by topic, with live search, **Copy all** and **Download .md**;
-- a **Your notes** card on the dashboard showing the latest three, with a count.
-
-The assistant can read the notes on those pages, so you can ask it to summarise them, find gaps, or turn them into practice questions.
-
-## Look and feel
-
-A top bar with Dashboard, My notes and Mistakes (plus Admin for admins) and an account menu; a friendly greeting with a progress ring and one-tap "Review tricky" / "Surprise me" buttons; colour-coded topic cards; encouraging wording after each answer. Light and dark mode follow your device.
-
-## Importing a markdown file, topic by topic
-
-**Add questions** (admin console or home) accepts one or more `.md` files (click or drag-and-drop) and/or pasted text. Any heading that is not a question becomes a **topic**; deeper headings nest inside it; each question is filed under the nearest topic above it:
-
-```md
 # Cloud Computing
 One-line description (optional).
 
-## Service models
-### Q1. Models
+## Q1. Service models
 **Which model gives you virtual machines?**
 
 - A. IaaS
@@ -102,34 +151,44 @@ One-line description (optional).
 - C. FaaS
 
 **Answer:** A. IaaS
-**Reason:** Why A is right.
-**Remember:** One-line memory hook.
+**Reason:** IaaS provides raw compute — you manage the VMs.
+**Remember:** "I" for Infrastructure.
+````
 
-# Ethical Hacking
-## Q1. Ports
-**Default HTTPS port?**
-**Answer:** 443
-```
-
-MCQ, MSQ (`**Answer:** A, C`) and short answers (no options) all work. Duplicates are skipped and headings with no questions inside them (intro text, contents) are ignored. Press **Check questions** to preview exactly which sections will be created, then choose who can open them (everyone, selected users, or a hidden draft). Existing sections with the same name are reused. Files without topic headings can still be split into sets of 15 or put in one topic, as before.
-
-## The assistant
-
-A chat panel docks to the right of every page and pushes the content over rather than covering it (drag its left edge to resize; on phones it slides over as a drawer). It always knows where you are:
-
-| Page | What it can do |
+| Format | Syntax |
 |---|---|
-| A question | Hints only until you answer, then full explanations |
-| Home / a section | Study plans, quick quizzes, explain a topic, what to revise next |
-| Read answers, Mistake log, Results | Summaries, patterns in your mistakes, memory tricks |
-| Add questions / Admin | Explains the import format and writes questions you can copy in one click |
+| Multiple-choice (MCQ) | `**Answer:** B` |
+| Multi-select (MSQ) | `**Answer:** A, C` |
+| Short answer | `**Answer:** 443` (no options needed) |
 
-## Upgrading from v2
+Code blocks inside questions, options, and explanations are fully supported.
 
-Run the new `supabase/schema.sql` once (it also adds the notes table; running it again is always safe). Your questions, progress, notes and XP are kept. The oldest account becomes the admin, and all existing sections become **hidden** (visible only to their owner and to admins) until you share them from **Content & access**. Re-deploy the app files, and you're done.
+---
 
-## Notes
+## 🗄️ Database Schema (overview)
 
-- Progress, notes, XP and the mistake log are always private to each person, even for content you share.
-- Each section or question is owned by whoever created it. People with the *Own content* permission can only manage their own private sections.
-- XP gains are capped per request on the server. The assistant has no per-user rate limit, so use Disable or the AI switch if someone overuses it.
+| Table | Purpose |
+|---|---|
+| `profiles` | Role (`user`/`admin`), per-user permission overrides, XP, streak |
+| `topics` | Sections and sub-sections with nested parent references |
+| `questions` | Question data (JSONB), linked to a topic |
+| `topic_access` | Rows granting specific users access to a `selected` section |
+| `question_access` | Same, but per question |
+| `progress` | Per-user, per-question attempt history |
+| `notes` | Per-user, per-question text notes |
+| `topic_notes` | Per-user free-form notes under a topic |
+| `app_settings` | Site-wide defaults (e.g. default permissions for new accounts) |
+
+All tables have RLS enabled. The `visible_topic_ids()` function walks the section tree recursively and returns only what the signed-in user is allowed to see.
+
+---
+
+## ⬆️ Upgrading from v2
+
+Re-run `supabase/schema.sql` (it's idempotent — safe to run on existing data). Your questions, progress, notes, and XP are preserved. Existing sections become **Hidden** (admin-only) until you publish them from the Admin console → Content & access tab.
+
+---
+
+## 📄 License
+
+MIT — do whatever you like with it.
